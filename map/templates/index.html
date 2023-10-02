@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    {{ stations|json_script:"station_json" }};
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+<div id="map" style="height: 600px; width: 600px"></div>
+<script>
+    var map = L.map('map').setView([55.751244, 37.618423], 13);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright"></a>'
+    }).addTo(map);
+
+   var userIcon = L.icon({
+    iconUrl: 'http://YOUR_IMAGE_URL', //Добавьте URL иконки пользователя
+    iconSize: [25, 41],
+    iconAnchor: [12.5, 41],
+    popupAnchor: [0, -41]
+    });
+
+    function locateUser() {
+        map.locate({setView: true});
+
+        function onLocationFound(e) {
+            var radius = e.accuracy / 2;
+            L.marker(e.latlng, {icon: userIcon}).addTo(map)
+                .bindPopup("You are within " + radius + " meters from this point").openPopup();
+            L.circle(e.latlng, radius).addTo(map);
+        }
+        map.on('locationfound', onLocationFound);
+
+        function onLocationError(e) {
+            alert(e.message);
+        }
+        map.on('locationerror', onLocationError);
+    }
+
+    var atmIcon = L.icon({
+        iconUrl: 'https://sun9-7.userapi.com/impg/yl63Io2s8kDIRhjvorj949ZZ83DHjiqnbsf5ig/eNBkpS7kSqs.jpg?size=1054x929&quality=95&sign=f73ce373cbb83ef07b6d0363104b6c26&c_uniq_tag=I_S3PkCTfEwsa51Dz4Z2YSxPNiSI-arE_vwVOQg3fgI&type=album',
+        iconSize: [25, 41],
+        iconAnchor: [12.5, 41],
+        popupAnchor: [0, -41]
+    });
+    let stations =JSON.parse(document.getElementById("station_json").textContent)
+
+
+    var waypoints = [];
+
+    // Добавляем каждую станцию на карту
+    // Создаем и добавляем новый контроллер маршрутов
+    var routingControl = L.Routing.control({
+          waypoints: [],
+          routeWhileDragging: false
+        }).addTo(map);
+
+stations.forEach(station => {
+    var marker = L.marker([station.latitude, station.longitude], { autoPan: true, draggable: false });
+
+    marker.on('click', function(e) {
+        if (waypoints.length < 2) {
+            waypoints.push(e.target); // добавлние точек пока их не станет 2
+        }
+        else if (waypoints.length >= 2) {
+            waypoints.splice(0, waypoints.length); // очищает массив
+            waypoints.push(e.target); // добавляет новую точку в очищенный массив
+        }
+
+        if (waypoints.length == 2) {
+            routingControl.setWaypoints([
+                waypoints[0].getLatLng(), waypoints[1].getLatLng()
+            ]);
+        }
+    });
+
+    {#marker.addTo(map);#}
+});
+
+locateUser();
+
+
+</script>
+
+<table>
+    <tr>
+        <th>Name</th>
+    </tr>
+    {% for bank in stations %}
+    <tr>
+        <td>{{ bank }}</td>
+    </tr>
+    {% endfor %}
+</table>
+<table>
+    <tr>
+        <th>Банкоматы</th>
+    </tr>
+    {% for bank in ATM %}
+    <tr>
+        <td>{{ bank.coordinates }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}
