@@ -4,18 +4,37 @@ from map.models import BankCoordinates
 from faker import Faker
 from .models import Bank, BankBranch, IndividualATM, BankCoordinates
 
+import random
+from faker import Faker
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+import json
+
+@csrf_exempt
 
 def index(request):
     # create_random_data()
-    stations = list(BankCoordinates.objects.values("latitude","longitude" )[:100])
-    ATM=IndividualATM.objects.all()
-    # banks = list(Bank.objects.values('name'))
+    # Обработка координат пользователя
 
-    print(stations)
-    return render(request, 'index.html', {'stations': stations,"ATM":ATM})
-import random
-from faker import Faker
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        lat = data['lat']
+        lon = data['lon']
+        print("lon")
+        # Сохраните данные в модель YourUserLocationModel
+        # user_loc = YourUserLocationModel(latitude=lat, longitude=lon)
+        # user_loc.save()
+
+    # Извлечение координат банков
+    stations = list(BankCoordinates.objects.values("latitude", "longitude")[:100])
+
+    # Извлечение данных ATM
+    ATM = IndividualATM.objects.all()
+
+    # Возврат данных в шаблон
+    return render(request, 'index.html', {'stations': stations, "ATM": ATM})
 
 def create_random_data():
     fake = Faker()
