@@ -1,26 +1,16 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import './main.global.css';
+import {Layout} from "./shared/Layout";
+import {Content} from "./shared/Content";
 
-function App() {
+function AppComponent() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Layout>
+      <Content>
+        <div>Hello world!</div>
+      </Content>
+    </Layout>
   );
 }
 
-export default App;
+export const App = () => <AppComponent />
