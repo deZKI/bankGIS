@@ -82,7 +82,6 @@ typings/
 .nuxt
 dist
 .idea
-../.idea
 
 # Gatsby files
 .cache/
