@@ -15,28 +15,52 @@
     }).addTo(map);
 
    var userIcon = L.icon({
-    iconUrl: 'http://YOUR_IMAGE_URL', //Добавьте URL иконки пользователя
+    iconUrl: 'https://sh18-stavropol-r07.gosweb.gosuslugi.ru/netcat_files/multifile/131/30/IMG_1329.jfif', //Добавьте URL иконки пользователя
     iconSize: [25, 41],
     iconAnchor: [12.5, 41],
     popupAnchor: [0, -41]
     });
 
-    function locateUser() {
-        map.locate({setView: true});
+   function locateUser() {
+    map.locate({setView: true});
 
-        function onLocationFound(e) {
-            var radius = e.accuracy / 2;
-            L.marker(e.latlng, {icon: userIcon}).addTo(map)
-                .bindPopup("You are within " + radius + " meters from this point").openPopup();
-            L.circle(e.latlng, radius).addTo(map);
-        }
-        map.on('locationfound', onLocationFound);
+    function onLocationFound(e) {
+        var radius = e.accuracy / 2;
+        L.marker(e.latlng, {icon: userIcon}).addTo(map)
+            .bindPopup("You are within " + radius + " meters from this point").openPopup();
+        L.circle(e.latlng, radius).addTo(map);
 
-        function onLocationError(e) {
-            alert(e.message);
+        // Getting user's coordinates
+        var lat = e.latlng.lat;
+        var lon = e.latlng.lng;
+        {#print(lat)#}
+        // Send coordinates to the server
+      $.ajax({
+        url: 'http://localhost:8000/',
+        type: 'POST',
+        data: JSON.stringify({'lat': lat, 'lon': lon}),
+        dataType: 'json',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        success: function (data) {
+            console.log(data);
+        },
+        error: function (error) {
+            console.error('Error:', error);
         }
-        map.on('locationerror', onLocationError);
+    });
     }
+
+    map.on('locationfound', onLocationFound);
+
+    function onLocationError(e) {
+        alert(e.message);
+    }
+
+    map.on('locationerror', onLocationError);
+}
 
     var atmIcon = L.icon({
         iconUrl: 'https://sun9-7.userapi.com/impg/yl63Io2s8kDIRhjvorj949ZZ83DHjiqnbsf5ig/eNBkpS7kSqs.jpg?size=1054x929&quality=95&sign=f73ce373cbb83ef07b6d0363104b6c26&c_uniq_tag=I_S3PkCTfEwsa51Dz4Z2YSxPNiSI-arE_vwVOQg3fgI&type=album',
@@ -56,27 +80,27 @@
           routeWhileDragging: false
         }).addTo(map);
 
-stations.forEach(station => {
-    var marker = L.marker([station.latitude, station.longitude], { autoPan: true, draggable: false });
+    stations.forEach(station => {
+        var marker = L.marker([station.latitude, station.longitude], { autoPan: true, draggable: false });
 
-    marker.on('click', function(e) {
-        if (waypoints.length < 2) {
-            waypoints.push(e.target); // добавлние точек пока их не станет 2
-        }
-        else if (waypoints.length >= 2) {
-            waypoints.splice(0, waypoints.length); // очищает массив
-            waypoints.push(e.target); // добавляет новую точку в очищенный массив
-        }
+        marker.on('click', function(e) {
+            if (waypoints.length < 2) {
+                waypoints.push(e.target); // добавлние точек пока их не станет 2
+            }
+            else if (waypoints.length >= 2) {
+                waypoints.splice(0, waypoints.length); // очищает массив
+                waypoints.push(e.target); // добавляет новую точку в очищенный массив
+            }
 
-        if (waypoints.length == 2) {
-            routingControl.setWaypoints([
-                waypoints[0].getLatLng(), waypoints[1].getLatLng()
-            ]);
-        }
+            if (waypoints.length == 2) {
+                routingControl.setWaypoints([
+                    waypoints[0].getLatLng(), waypoints[1].getLatLng()
+                ]);
+            }
+        });
+
+        marker.addTo(map);
     });
-
-    {#marker.addTo(map);#}
-});
 
 locateUser();
 
