@@ -14,10 +14,10 @@ class BankAdmin(admin.ModelAdmin):
 
 @admin.register(BankBranch)
 class BankBranchAdmin(admin.ModelAdmin):
-    list_display = ('bank', 'coordinates')
-    raw_id_fields = ('bank', 'coordinates')
+    list_display = ('bank', 'street')
+    raw_id_fields = ('bank', 'street')
 
 @admin.register(IndividualATM)
 class IndividualATMAdmin(admin.ModelAdmin):
-    list_display = ('bank', 'coordinates')
-    raw_id_fields = ('bank', 'coordinates')
+    list_display = ('bank', 'street')
+    raw_id_fields = ('bank', 'street')

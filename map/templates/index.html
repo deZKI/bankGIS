@@ -2,17 +2,21 @@
 
 {% block content %}
 
-    {{ stations|json_script:"station_json" }};
+ {{ stations|json_script:"station_json" }}
 <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
 <div id="map" style="height: 600px; width: 600px"></div>
 <script>
+    // Центрируем карту на Москве
+
     var map = L.map('map').setView([55.751244, 37.618423], 13);
+    // Подключаем слой OpenStreetMap
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="http://www.openstreetmap.org/copyright"></a>'
     }).addTo(map);
+    // иконка для отображения текущего местоположения пользователя
 
    var userIcon = L.icon({
     iconUrl: 'https://sh18-stavropol-r07.gosweb.gosuslugi.ru/netcat_files/multifile/131/30/IMG_1329.jfif', //Добавьте URL иконки пользователя
@@ -20,10 +24,31 @@
     iconAnchor: [12.5, 41],
     popupAnchor: [0, -41]
     });
+       // функция для получения csrf-токена
+
+   const getCookie = (name) => {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    };
+       const csrftoken = getCookie('csrftoken');
+
+    // Определение функции locateUser(), которая получает геолокацию пользователя
 
    function locateUser() {
     map.locate({setView: true});
 
+    // Обработка найденного местоположения
     function onLocationFound(e) {
         var radius = e.accuracy / 2;
         L.marker(e.latlng, {icon: userIcon}).addTo(map)
@@ -33,24 +58,23 @@
         // Getting user's coordinates
         var lat = e.latlng.lat;
         var lon = e.latlng.lng;
-        {#print(lat)#}
-        // Send coordinates to the server
-      $.ajax({
-        url: 'http://localhost:8000/',
-        type: 'POST',
-        data: JSON.stringify({'lat': lat, 'lon': lon}),
-        dataType: 'json',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        success: function (data) {
-            console.log(data);
-        },
-        error: function (error) {
-            console.error('Error:', error);
-        }
-    });
+
+         fetch('http://127.0.0.1:8000/', { // Замените URL своим endpoint'ом
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+
+            },
+            body: JSON.stringify({ lat, lon }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Здесь вы можете обработать ответ сервера как вам угодно
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
     }
 
     map.on('locationfound', onLocationFound);
@@ -60,7 +84,7 @@
     }
 
     map.on('locationerror', onLocationError);
-}
+    }
 
     var atmIcon = L.icon({
         iconUrl: 'https://sun9-7.userapi.com/impg/yl63Io2s8kDIRhjvorj949ZZ83DHjiqnbsf5ig/eNBkpS7kSqs.jpg?size=1054x929&quality=95&sign=f73ce373cbb83ef07b6d0363104b6c26&c_uniq_tag=I_S3PkCTfEwsa51Dz4Z2YSxPNiSI-arE_vwVOQg3fgI&type=album',
@@ -102,7 +126,7 @@
         marker.addTo(map);
     });
 
-locateUser();
+locateUser()
 
 
 </script>
@@ -123,7 +147,7 @@ locateUser();
     </tr>
     {% for bank in ATM %}
     <tr>
-        <td>{{ bank.coordinates }}</td>
+        <td>{{ bank.street }}</td>
     </tr>
     {% endfor %}
 </table>

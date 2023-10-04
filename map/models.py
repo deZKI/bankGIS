@@ -13,7 +13,7 @@ class BankCoordinates(models.Model):
 
 class Bank(models.Model):
     name = models.CharField(max_length=255)
-    coordinates = models.ForeignKey(BankCoordinates, related_name="banks", on_delete=models.CASCADE)
+    street = models.ForeignKey(BankCoordinates, related_name="banks", on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
@@ -21,16 +21,16 @@ class Bank(models.Model):
 
 class BankBranch(models.Model):
     bank = models.ForeignKey(Bank, related_name="branches", on_delete=models.CASCADE)
-    coordinates = models.ForeignKey(BankCoordinates, related_name="branches", on_delete=models.CASCADE)
+    street = models.ForeignKey(BankCoordinates, related_name="branches", on_delete=models.CASCADE)
 
     def __str__(self):
-        return f'{self.bank.name} Branch at {self.coordinates.station_name}'
+        return f'{self.bank.name} Branch at {self.street.station_name}'
 
 
 class IndividualATM(models.Model):
     bank = models.ForeignKey(Bank, related_name="atms", on_delete=models.CASCADE)
-    coordinates = models.ForeignKey(BankCoordinates, related_name="atms", on_delete=models.CASCADE)
+    street = models.ForeignKey(BankCoordinates, related_name="atms", on_delete=models.CASCADE)
 
 
     def __str__(self):
-        return f'{self.bank.name} ATM at {self.coordinates.station_name}'
+        return f'{self.bank.name} ATM at {self.street.station_name}'

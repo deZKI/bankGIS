@@ -14,7 +14,7 @@ import json
 
 @csrf_exempt
 
-def index(request):
+def show_map(request):
     # create_random_data()
     # Обработка координат пользователя
 
@@ -23,14 +23,13 @@ def index(request):
         lat = data['lat']
         lon = data['lon']
         print("lon")
-        # Сохраните данные в модель YourUserLocationModel
+        print(lon,lat)
+
         # user_loc = YourUserLocationModel(latitude=lat, longitude=lon)
-        # user_loc.save()
+    # вывыод банков
+    stations = list(BankCoordinates.objects.values("latitude", "longitude"))
 
-    # Извлечение координат банков
-    stations = list(BankCoordinates.objects.values("latitude", "longitude")[:100])
-
-    # Извлечение данных ATM
+    # Извлечение данных банкоматов
     ATM = IndividualATM.objects.all()
 
     # Возврат данных в шаблон
