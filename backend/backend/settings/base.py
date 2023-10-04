@@ -3,7 +3,7 @@ import os # noqa
 from pathlib import Path
 from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 
 dotenv_path = os.path.join(BASE_DIR, '.env')
 
