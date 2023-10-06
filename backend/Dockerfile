@@ -9,3 +9,4 @@ RUN apk update && apk add build-base libffi-dev python3-dev
 RUN apk add py3-cffi
 
 RUN pip install --no-cache-dir -r requirements.txt
+RUN python manage.py collectstatic --noinput

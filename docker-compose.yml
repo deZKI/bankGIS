@@ -4,11 +4,13 @@ volumes:
   postgres_data:
   static_volume:
   media_volume:
+  react_build:
 
 services:
-  web:
+  backend:
     build: backend
     command: gunicorn backend.wsgi:application --bind 0.0.0.0:8000
+
     volumes:
       - static_volume:/app/static/
       - media_volume:/app/media/
@@ -17,6 +19,10 @@ services:
       - .env.docker
     depends_on:
       - db
+  frontend:
+    build: frontend
+    volumes:
+      - react_build:/react/build
 
   db:
     image: postgres:13.0-alpine
@@ -35,3 +41,4 @@ services:
       - media_volume:/app/media/
     depends_on:
       - backend
+      - frontend
