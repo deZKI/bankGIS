@@ -1,4 +1,4 @@
-from base import *
+from .base import *
 
 DATABASES = {
     "default": {
@@ -28,5 +28,5 @@ AUTH_PASSWORD_VALIDATORS = [
 
 DEBUG = False
 
-media = 'app/media/'
-static = '/app/static/'
+STATIC_ROOT = '/app/static/v1'
+MEDIA_ROOT = '/app/media/v1'
