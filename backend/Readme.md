@@ -3,9 +3,9 @@
 Для создание базы данных введите следующие команды
 ###
     sudo -u postgres psql
-    create user roaddb with password 'roaddb';
+    create user bankgis with password 'bankGIS';
     create database roaddb;
-    grant all privileges on database roaddb to roaddb;
+    grant all privileges on database bankgis to bankgis;
     ALTER ROLE roaddb SUPERUSER;
     \c roaddb;
     CREATE EXTENSION postgis;
