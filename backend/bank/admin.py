@@ -1,3 +1,13 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import ATM, ATMService
+
+
+@admin.register(ATM)
+class ATMAdmin(admin.ModelAdmin):
+    list_display = ('address', 'latitude', 'longitude', 'allDay')
+
+
+@admin.register(ATMService)
+class ATMServiceAdmin(admin.ModelAdmin):
+    list_display = ('name', 'capability', 'activity')
