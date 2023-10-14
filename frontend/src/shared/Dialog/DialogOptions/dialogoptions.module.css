@@ -1,0 +1,36 @@
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 0 24px 0;
+}
+
+.item:not(:last-child) {
+  margin: 0 10px 10px 0;
+}
+
+.button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 5px 19px;
+  border: 1px solid var(--blue);
+  border-radius: 30px;
+  color: var(--blue);
+  background-color: transparent;
+  box-sizing: border-box;
+}
+
+.button:hover {
+  color: var(--white);
+  background-color: var(--blue);
+}
+
+.button:focus {
+  color: var(--white);
+  background-color: var(--blue);
+}
+
+.button:active {
+  color: var(--blue);
+  background-color: transparent;
+}

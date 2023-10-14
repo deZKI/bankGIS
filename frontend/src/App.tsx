@@ -1,15 +1,14 @@
 import React from 'react';
 import './main.global.css';
-import {Layout} from "./shared/Layout";
-import {Content} from "./shared/Content";
+import {Dialog} from "./shared/Dialog";
+import {Mapgl} from "./shared/Mapgl";
 
 function AppComponent() {
   return (
-    <Layout>
-      <Content>
-        <div>Hello world!</div>
-      </Content>
-    </Layout>
+    <div style={{ width: "100%", height: "100vh" }}>
+      <Dialog />
+      <Mapgl />
+    </div>
   );
 }
 
