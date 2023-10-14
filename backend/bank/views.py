@@ -2,9 +2,23 @@ import json
 
 from django.http import HttpResponse
 
+from rest_framework.decorators import api_view
+
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 from .models import ATM, ATMService, BankBranch, OpeningHours, UserComment, Workload
 
 
+@swagger_auto_schema(
+    method='GET',
+    operation_summary='Download ATM Data',
+    operation_description='This endpoint allows you to download ATM data from a file and populate the database with it.',
+    responses={
+        200: openapi.Response('Successful'),
+    },
+)
+@api_view(['GET'])
 def download_atm(request):
     with open('./vtb_data/atms.txt', 'r') as file:
         ATM.objects.all().delete()
@@ -38,6 +52,15 @@ def download_atm(request):
     return HttpResponse(f'Добавлено объектов {added_atm}')
 
 
+@swagger_auto_schema(
+    method='GET',
+    operation_summary='Download ATM Data',
+    operation_description='This endpoint allows you to download ATM data from a file and populate the database with it.',
+    responses={
+        200: openapi.Response('Successful'),
+    },
+)
+@api_view(['GET'])
 def download_bankBranch(request):
     with open('./vtb_data/merged.json', 'r', encoding='utf-8') as file:
         data = json.load(file)
