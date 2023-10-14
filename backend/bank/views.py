@@ -2,10 +2,14 @@ import http
 import json
 
 from django.http import HttpResponse
+from django.db.models import Q, F, FloatField, ExpressionWrapper, Value
+from django.db.models.functions import Radians, Cos, Sin, Sqrt, Cast
+
+from django_filters import rest_framework as django_filters
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, viewsets, filters
 
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -13,7 +17,10 @@ from drf_yasg import openapi
 from ai import fuzzy_match
 
 from .models import ATM, ATMService, BankBranch, OpeningHours, UserComment, Workload, BranchService
-from .serializers import BranchServiceSerializer
+from .serializers import BranchServiceSerializer, BankBranchSerializer
+from .filters import BankBranchFilter
+from .paginator import CustomPagination
+from .utils import haversine_distance, parse_coordinate, Atan2Func
 
 
 @swagger_auto_schema(
@@ -39,13 +46,13 @@ def download_atm(request):
             ).exists():
                 continue
 
-            atm, existed = ATM.objects.get_or_create(
+            atm, created = ATM.objects.get_or_create(
                 address=atm_data["address"],
                 latitude=atm_data["latitude"],
                 longitude=atm_data["longitude"],
                 allDay=atm_data["allDay"]
             )
-            if not existed:
+            if created:
                 for service_name, service_data in atm_data["services"].items():
                     capability = service_data["serviceCapability"]
                     activity = service_data["serviceActivity"]
@@ -68,51 +75,60 @@ def download_atm(request):
 )
 @api_view(['GET'])
 def download_bankBranch(request):
-    with open('./vtb_data/merged.json', 'r', encoding='utf-8') as file:
+    with open('./vtb_data/baza21.json', 'r', encoding='utf-8') as file:
         data = json.load(file)
-
+    branch_count = 0
     for branch_data in data:
-        branch = BankBranch.objects.create(
-            sale_point_name=branch_data["salePointName"],
-            address=branch_data["address"],
-            status=branch_data["status"],
-            rko=branch_data["rko"],
-            office_type=branch_data["officeType"],
-            sale_point_format=branch_data["salePointFormat"],
-            suo_availability=branch_data["suoAvailability"],
-            has_ramp=branch_data["hasRamp"],
-            latitude=branch_data["latitude"],
-            longitude=branch_data["longitude"],
-            metro_station=branch_data["metroStation"],
-            distance=branch_data["distance"],
-            kep=branch_data["kep"],
-            my_branch=branch_data["myBranch"],
-            review_count=branch_data["review_count"],
-            estimation=branch_data["estimation"]
-        )
+        try:
+            branch, created = BankBranch.objects.get_or_create(
+                sale_point_name=branch_data["salePointName"],
+                address=branch_data["address"],
+                status=branch_data["status"],
+                rko=branch_data["rko"],
+                office_type=branch_data["officeType"],
+                sale_point_format=branch_data["salePointFormat"],
+                suo_availability=branch_data["suoAvailability"],
+                has_ramp=branch_data["hasRamp"],
+                latitude=branch_data["latitude"],
+                longitude=branch_data["longitude"],
+                metro_station=branch_data["metroStation"],
+                distance=branch_data["distance"],
+                kep=branch_data["kep"],
+                my_branch=branch_data["myBranch"],
+                review_count=branch_data["review_count"],
+                estimation=branch_data["estimation"]
+            )
 
-        # Сохранение данных о часах работы
-        for hours_data in branch_data["openHours"]:
-            time, exits = OpeningHours.objects.get_or_create(days=hours_data["days"],
-                                                             hours=hours_data["hours"])
-            branch.open_hours.add(time)
+            if not created:
+                continue
+            branch_count += 1
 
-        for hours_data in branch_data["openHoursIndividual"]:
-            time, exits = OpeningHours.objects.get_or_create(days=hours_data["days"],
-                                                             hours=hours_data["hours"])
-            branch.open_hours_individual.add(time)
+            # Сохранение данных о часах работы
+            for hours_data in branch_data["openHours"]:
+                time, exits = OpeningHours.objects.get_or_create(days=hours_data["days"],
+                                                                 hours=hours_data["hours"])
+                branch.open_hours.add(time)
 
-        for day, day_data in branch_data['time'].items():
-            for hour_data in day_data:
-                hour, people_count = hour_data
-                Workload.objects.create(day=day, hour=hour, people_count=people_count, branch=branch)
+            for hours_data in branch_data["openHoursIndividual"]:
+                time, exits = OpeningHours.objects.get_or_create(days=hours_data["days"],
+                                                                 hours=hours_data["hours"])
+                branch.open_hours_individual.add(time)
 
-        # Сохранение данных об отзывах
-        user_comments_data = branch_data["user_comments"]
-        for author, comment_data in user_comments_data.items():
-            UserComment.objects.create(branch=branch, author=author, stars=comment_data["stars"],
-                                       text=comment_data["text"])
-    return HttpResponse(f'Добавлено оьъектов')
+                for day, day_data in branch_data['time'].items():
+                    for hour_data in day_data:
+                        hour, people_count = hour_data
+                        Workload.objects.create(day=day, hour=hour, people_count=people_count, branch=branch)
+
+            # Сохранение данных об отзывах
+            user_comments_data = branch_data["user_comments"]
+            for author, comment_data in user_comments_data.items():
+                UserComment.objects.create(branch=branch, author=author, stars=comment_data["stars"],
+                                           text=comment_data["text"])
+
+        except Exception as error:
+            continue
+
+    return HttpResponse(f'Добавлено оьъектов {branch_count}')
 
 
 @swagger_auto_schema(
@@ -150,3 +166,68 @@ def match_service(request):
         return Response(data=serialized_data.data)
 
     return Response(data='Данных нет')
+
+
+class BankBranchViewSet(viewsets.ReadOnlyModelViewSet):
+    """ VIEW Для отделений банков """
+    queryset = BankBranch.objects.all()
+    serializer_class = BankBranchSerializer
+    filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filterset_class = BankBranchFilter
+    search_fields = ['sale_point_name', 'address', 'services__name']
+    ordering_fields = ['sale_point_name', 'address']
+    pagination_class = CustomPagination
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                'latitude', in_=openapi.IN_QUERY,
+                type=openapi.FORMAT_DECIMAL,
+                description='Долгота пользователя',
+                required=False,
+            ),
+            openapi.Parameter(
+                'longitude', in_=openapi.IN_QUERY,
+                type=openapi.FORMAT_DECIMAL,
+                description='Широта пользователя',
+                required=False,
+            )
+        ],
+        operation_description='Provide either latitude or longitude (or both) to search for bank branches.'
+    )
+    def list(self, request, *args, **kwargs):
+        search_query = request.GET.get('search', '')
+        if search_query:
+            self.queryset = self.queryset.filter(
+                Q(sale_point_name__icontains=search_query) |
+                Q(address__icontains=search_query)
+            )
+        return super().list(request, *args, **kwargs)
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user_latitude = parse_coordinate(self.request.query_params.get('latitude'))
+        user_longitude = parse_coordinate(self.request.query_params.get('longitude'))
+
+        if user_latitude is not None and user_longitude is not None:
+            # Переводим в радианы
+            user_latitude_rad = Radians(user_latitude)
+            user_longitude_rad = Radians(user_longitude)
+
+            queryset = queryset.annotate(
+                lat_diff=Radians(Cast(F('latitude'), FloatField())) - user_latitude_rad,
+                lon_diff=Radians(Cast(F('longitude'), FloatField())) - user_longitude_rad,
+                a=Sin(F('lat_diff') / 2) * Sin(F('lat_diff') / 2) +
+                  Cos(user_latitude_rad) * Cos(Radians(Cast(F('latitude'), FloatField()))) *
+                  Sin(F('lon_diff') / 2) * Sin(F('lon_diff') / 2),
+            ).annotate(
+                distance_between_user=ExpressionWrapper(
+                    6371 * 2 * Atan2Func(
+                        Sqrt(F('a')),
+                        Sqrt(1 - F('a'))
+                    ),
+                    output_field=FloatField()
+                )
+            ).order_by('distance_between_user')
+
+        return queryset
