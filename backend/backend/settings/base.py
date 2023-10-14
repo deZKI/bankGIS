@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'django_admin_inline_paginator',
     'rest_framework',
     'corsheaders',
     'drf_yasg',

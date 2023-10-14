@@ -1,19 +1,25 @@
+import http
 import json
 
 from django.http import HttpResponse
 
 from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
-from .models import ATM, ATMService, BankBranch, OpeningHours, UserComment, Workload
+from ai import fuzzy_match
+
+from .models import ATM, ATMService, BankBranch, OpeningHours, UserComment, Workload, BranchService
+from .serializers import BranchServiceSerializer
 
 
 @swagger_auto_schema(
     method='GET',
     operation_summary='Download ATM Data',
-    operation_description='This endpoint allows you to download ATM data from a file and populate the database with it.',
+    operation_description='Загрузить данные с json базы АТМ',
     responses={
         200: openapi.Response('Successful'),
     },
@@ -54,8 +60,8 @@ def download_atm(request):
 
 @swagger_auto_schema(
     method='GET',
-    operation_summary='Download ATM Data',
-    operation_description='This endpoint allows you to download ATM data from a file and populate the database with it.',
+    operation_summary='Download BankBranch Data',
+    operation_description='Загрузить данные с json базы Отделений',
     responses={
         200: openapi.Response('Successful'),
     },
@@ -107,3 +113,40 @@ def download_bankBranch(request):
             UserComment.objects.create(branch=branch, author=author, stars=comment_data["stars"],
                                        text=comment_data["text"])
     return HttpResponse(f'Добавлено оьъектов')
+
+
+@swagger_auto_schema(
+    method='POST',
+    operation_summary='Найти услуги по сырому запросу пользователя',
+    operation_description='Сервер отдает похожие типы услуг по запросу пользователя',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'query': openapi.Schema(type=openapi.TYPE_STRING, description='Запрос пользователя'),
+        },
+        required=['query'],
+    ),
+    responses={
+        status.HTTP_200_OK: BranchServiceSerializer(many=True),
+        status.HTTP_204_NO_CONTENT: 'Данных нет'
+    },
+)
+@api_view(['POST'])
+def match_service(request):
+    query = request.data.get('query')
+    coincidence = 60
+
+    if query:
+        fuzzy_services = fuzzy_match(query, list(BranchService.objects.all().values_list('name', flat=True)))
+
+        services = [service[0] for service in fuzzy_services if service[1] > coincidence]
+
+        matching_services = BranchService.objects.filter(name__in=services)
+
+        serialized_data = BranchServiceSerializer(matching_services, many=True)
+
+        if not serialized_data.data:
+            return Response(data='Данных нет')
+        return Response(data=serialized_data.data)
+
+    return Response(data='Данных нет')

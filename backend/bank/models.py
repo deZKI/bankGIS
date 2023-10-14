@@ -47,6 +47,15 @@ class OpeningHours(models.Model):
         return f'{self.days}: {self.hours}'
 
 
+class BranchService(models.Model):
+    " Услуги отделения"
+    name = models.CharField(max_length=50, verbose_name='Название типа услуги')
+    def __str__(self):
+        return f'{self.name}'
+    class Meta:
+        verbose_name = 'Услуга'
+        verbose_name_plural = 'Услуги'
+
 class BankBranch(models.Model):
     """ отделение """
     sale_point_name = models.CharField(max_length=255, verbose_name="Название отделения")
@@ -65,6 +74,8 @@ class BankBranch(models.Model):
     my_branch = models.BooleanField(default=False, verbose_name="Мой отдел", null=True)
     review_count = models.CharField(max_length=50, verbose_name="Количество отзывов", null=True)
     estimation = models.CharField(max_length=10, verbose_name="Оценка", null=True)
+
+    services = models.ManyToManyField(to=BranchService, verbose_name='Предоставляемые услуги')
 
     open_hours = models.ManyToManyField(OpeningHours, related_name="branch_opening_hours", verbose_name="Часы работы")
     open_hours_individual = models.ManyToManyField(OpeningHours, related_name="individual_opening_hours",
