@@ -7,10 +7,11 @@ from rest_framework.routers import DefaultRouter
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
-from bank.views import download_atm, download_bankBranch, match_service, BankBranchViewSet
+from bank.views import download_atm, download_bankBranch, match_service, BankBranchViewSet, ATMViewSet
 
 router = DefaultRouter()
 router.register(r'bank-branches', BankBranchViewSet)
+router.register(r'bank-atm', ATMViewSet)
 
 
 schema_view = get_schema_view(

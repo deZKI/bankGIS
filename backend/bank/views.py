@@ -17,8 +17,8 @@ from drf_yasg import openapi
 from ai import fuzzy_match
 
 from .models import ATM, ATMService, BankBranch, OpeningHours, UserComment, Workload, BranchService
-from .serializers import BranchServiceSerializer, BankBranchSerializer
-from .filters import BankBranchFilter
+from .serializers import BranchServiceSerializer, BankBranchSerializer, ATMSerializer
+from .filters import BankBranchFilter, ATMFilter
 from .paginator import CustomPagination
 from .utils import haversine_distance, parse_coordinate, Atan2Func
 
@@ -193,7 +193,7 @@ class BankBranchViewSet(viewsets.ReadOnlyModelViewSet):
                 required=False,
             )
         ],
-        operation_description='Provide either latitude or longitude (or both) to search for bank branches.'
+        operation_description='Для определения ближайшего отделения для пользователя'
     )
     def list(self, request, *args, **kwargs):
         search_query = request.GET.get('search', '')
@@ -206,8 +206,8 @@ class BankBranchViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        user_latitude = parse_coordinate(self.request.query_params.get('latitude'))
-        user_longitude = parse_coordinate(self.request.query_params.get('longitude'))
+        user_latitude = self.request.query_params.get('latitude')
+        user_longitude = self.request.query_params.get('longitude')
 
         if user_latitude is not None and user_longitude is not None:
             # Переводим в радианы
@@ -215,8 +215,8 @@ class BankBranchViewSet(viewsets.ReadOnlyModelViewSet):
             user_longitude_rad = Radians(user_longitude)
 
             queryset = queryset.annotate(
-                lat_diff=Radians(Cast(F('latitude'), FloatField())) - user_latitude_rad,
-                lon_diff=Radians(Cast(F('longitude'), FloatField())) - user_longitude_rad,
+                lat_diff=Radians(Cast(F('latitude'), FloatField())) - parse_coordinate(user_latitude_rad),
+                lon_diff=Radians(Cast(F('longitude'), FloatField())) - parse_coordinate(user_longitude_rad),
                 a=Sin(F('lat_diff') / 2) * Sin(F('lat_diff') / 2) +
                   Cos(user_latitude_rad) * Cos(Radians(Cast(F('latitude'), FloatField()))) *
                   Sin(F('lon_diff') / 2) * Sin(F('lon_diff') / 2),
@@ -231,3 +231,65 @@ class BankBranchViewSet(viewsets.ReadOnlyModelViewSet):
             ).order_by('distance_between_user')
 
         return queryset
+
+
+class ATMViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ATM.objects.all()
+    serializer_class = ATMSerializer
+    filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filterset_class = ATMFilter
+    search_fields = ['address']
+    ordering_fields = ['address', 'latitude', 'longitude']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user_latitude = self.request.query_params.get('latitude')
+        user_longitude = self.request.query_params.get('longitude')
+        if user_latitude is not None and user_longitude is not None:
+            # Переводим в радианы
+            user_latitude_rad = Radians(user_latitude)
+            user_longitude_rad = Radians(user_longitude)
+
+            queryset = queryset.annotate(
+                lat_diff=Radians(Cast(F('latitude'), FloatField())) - parse_coordinate(user_latitude_rad),
+                lon_diff=Radians(Cast(F('longitude'), FloatField())) - parse_coordinate(user_longitude_rad),
+                a=Sin(F('lat_diff') / 2) * Sin(F('lat_diff') / 2) +
+                  Cos(user_latitude_rad) * Cos(Radians(Cast(F('latitude'), FloatField()))) *
+                  Sin(F('lon_diff') / 2) * Sin(F('lon_diff') / 2),
+            ).annotate(
+                distance_between_user=ExpressionWrapper(
+                    6371 * 2 * Atan2Func(
+                        Sqrt(F('a')),
+                        Sqrt(1 - F('a'))
+                    ),
+                    output_field=FloatField()
+                )
+            ).order_by('distance_between_user')
+
+        return queryset
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                'latitude', in_=openapi.IN_QUERY,
+                type=openapi.FORMAT_DECIMAL,
+                description='Долгота пользователя',
+                required=False,
+            ),
+            openapi.Parameter(
+                'longitude', in_=openapi.IN_QUERY,
+                type=openapi.FORMAT_DECIMAL,
+                description='Широта пользователя',
+                required=False,
+            )
+        ],
+        operation_description='Для определения ближайшего банкомата для пользователя'
+    )
+    def list(self, request, *args, **kwargs):
+        search_query = request.GET.get('search', '')
+        if search_query:
+            self.queryset = self.queryset.filter(
+                Q(sale_point_name__icontains=search_query) |
+                Q(address__icontains=search_query)
+            )
+        return super().list(request, *args, **kwargs)

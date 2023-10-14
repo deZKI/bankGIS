@@ -1,6 +1,6 @@
 from rest_framework.serializers import ModelSerializer
 
-from .models import BranchService, BankBranch, OpeningHours
+from .models import BranchService, BankBranch, OpeningHours, ATMService, ATM
 
 
 class BranchServiceSerializer(ModelSerializer):
@@ -23,4 +23,19 @@ class BankBranchSerializer(ModelSerializer):
 
     class Meta:
         model = BankBranch
+        fields = '__all__'
+
+
+class ATMServiceSerializer(ModelSerializer):
+    """ Сериализатор для видов услуг банкомата """
+    class Meta:
+        model = ATMService
+        fields = '__all__'
+
+class ATMSerializer(ModelSerializer):
+    """ Сериализатор банкомата """
+    services = ATMServiceSerializer(many=True)
+
+    class Meta:
+        model = ATM
         fields = '__all__'
