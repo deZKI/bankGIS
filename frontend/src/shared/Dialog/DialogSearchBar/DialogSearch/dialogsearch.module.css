@@ -1,9 +1,10 @@
 .form {
   margin: 0 8px 0 0;
+  width: 100%;
 }
 
 .input {
-  padding: 9px 56px 9px 15px;
+  padding: 9px 15px;
   border: none;
   border-radius: 8px;
   width: 100%;
@@ -21,4 +22,16 @@
 
 .input::placeholder {
   color: var(--grey);
+}
+
+.input:hover {
+  outline: 1px solid var(--blue);
+}
+
+.input:focus {
+  outline: 1px solid var(--blue);
+}
+
+.input:active {
+  outline: 1px solid var(--blue);
 }

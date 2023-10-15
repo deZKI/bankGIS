@@ -39,3 +39,8 @@ button {
   background: transparent;
   cursor: pointer;
 }
+
+.active {
+  border: 1px solid var(--blue) !important;
+  background-color: var(--blue) !important;
+}

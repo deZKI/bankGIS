@@ -5,7 +5,7 @@ import {Title} from "../../Title";
 
 export function DialogAddresses() {
   return (
-    <div>
+    <div className={styles.container}>
       <Title text="Ближайшие отделения" />
       <ul className={styles.list}>
         <DialogAddress address="г. Москва, Красная площадь, д.3" />
