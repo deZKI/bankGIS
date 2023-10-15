@@ -5,6 +5,10 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY . /app
 
+RUN apk update && apk add build-base musl-dev
+RUN apk add libffi-dev
+RUN apk add openblas
+
 RUN apk update && apk add build-base libffi-dev python3-dev
 RUN apk add py3-cffi
 
