@@ -26,7 +26,7 @@
 Админка
 ###
     username: admin
-    password: amdin
+    password: 301522
 ###
 
 SWAGGER
