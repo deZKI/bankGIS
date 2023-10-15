@@ -6,12 +6,15 @@ import {clientReducer, IClientState} from "./client/clientReducer";
 import {SET_CLIENT, SetClientAction} from "./client/clientActions";
 import {IRouteState, routeReducer} from "./route/routeReducer";
 import {SET_ROUTE, SetRouteAction} from "./route/routeActions";
+import {bankBranchesReducer, IBranchBranchesState} from "./banksBranches/bankBranchesReducer";
+import {SET_BANK_BRANCHES, SetBankBranchesAction} from "./banksBranches/bankBranchesActions";
 
 export interface IInitialState {
   filtering: IFilteringState;
   search: ISearchState;
   client: IClientState;
   route: IRouteState;
+  bankBranches: IBranchBranchesState;
 }
 
 export const initialState: IInitialState = {
@@ -26,10 +29,13 @@ export const initialState: IInitialState = {
   },
   route: {
     route: "пешеходный"
+  },
+  bankBranches: {
+    branchBranches: []
   }
 }
 
-type Actions = SetFilteringAction | SetSearchAction | SetClientAction | SetRouteAction
+type Actions = SetFilteringAction | SetSearchAction | SetClientAction | SetRouteAction | SetBankBranchesAction
 
 export const rootReducer = (state = initialState, action: Actions): IInitialState => {
   switch (action.type) {
@@ -52,6 +58,11 @@ export const rootReducer = (state = initialState, action: Actions): IInitialStat
       return {
         ...state,
         route: routeReducer(state.route, action)
+      }
+    case SET_BANK_BRANCHES:
+      return {
+        ...state,
+        bankBranches: bankBranchesReducer(state.bankBranches, action)
       }
     default:
       return state;
