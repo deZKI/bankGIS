@@ -211,12 +211,12 @@ class BankBranchViewSet(viewsets.ReadOnlyModelViewSet):
 
         if user_latitude is not None and user_longitude is not None:
             # Переводим в радианы
-            user_latitude_rad = Radians(user_latitude)
-            user_longitude_rad = Radians(user_longitude)
+            user_latitude_rad = Radians(parse_coordinate(user_latitude))
+            user_longitude_rad = Radians(parse_coordinate(user_longitude))
 
             queryset = queryset.annotate(
-                lat_diff=Radians(Cast(F('latitude'), FloatField())) - parse_coordinate(user_latitude_rad),
-                lon_diff=Radians(Cast(F('longitude'), FloatField())) - parse_coordinate(user_longitude_rad),
+                lat_diff=Radians(Cast(F('latitude'), FloatField())) - user_latitude_rad,
+                lon_diff=Radians(Cast(F('longitude'), FloatField())) - user_longitude_rad,
                 a=Sin(F('lat_diff') / 2) * Sin(F('lat_diff') / 2) +
                   Cos(user_latitude_rad) * Cos(Radians(Cast(F('latitude'), FloatField()))) *
                   Sin(F('lon_diff') / 2) * Sin(F('lon_diff') / 2),
@@ -247,12 +247,12 @@ class ATMViewSet(viewsets.ReadOnlyModelViewSet):
         user_longitude = self.request.query_params.get('longitude')
         if user_latitude is not None and user_longitude is not None:
             # Переводим в радианы
-            user_latitude_rad = Radians(user_latitude)
-            user_longitude_rad = Radians(user_longitude)
+            user_latitude_rad = Radians(parse_coordinate(user_latitude))
+            user_longitude_rad = Radians(parse_coordinate(user_longitude))
 
             queryset = queryset.annotate(
-                lat_diff=Radians(Cast(F('latitude'), FloatField())) - parse_coordinate(user_latitude_rad),
-                lon_diff=Radians(Cast(F('longitude'), FloatField())) - parse_coordinate(user_longitude_rad),
+                lat_diff=Radians(Cast(F('latitude'), FloatField())) - user_latitude_rad,
+                lon_diff=Radians(Cast(F('longitude'), FloatField())) - user_longitude_rad,
                 a=Sin(F('lat_diff') / 2) * Sin(F('lat_diff') / 2) +
                   Cos(user_latitude_rad) * Cos(Radians(Cast(F('latitude'), FloatField()))) *
                   Sin(F('lon_diff') / 2) * Sin(F('lon_diff') / 2),
