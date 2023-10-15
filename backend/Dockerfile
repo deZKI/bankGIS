@@ -10,7 +10,7 @@ RUN apk add libffi-dev
 RUN apk add openblas
 
 RUN apk update && apk add build-base libffi-dev python3-dev
-RUN apk add py3-cffi \
+RUN apk add py3-cffi
 
 RUN pip install numpy -Csetup-args=-Dblas=blas -Csetup-args=-Dlapack=lapack
 RUN pip install --no-cache-dir -r requirements.txt
