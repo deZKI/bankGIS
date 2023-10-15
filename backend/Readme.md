@@ -14,22 +14,10 @@
 ###
 Для запуска сервера.
 ###
-    python -m venv venv
+    python3 -m venv venv
     source venv/bin/activate 
        or
     venv\Scripts\activate # для windows
 
     pip install -r requirements.txt
-    python manage.py runserver --settings=backend.settings.local
-###
-
-Админка
-###
-    username: admin
-    password: 301522
-###
-
-SWAGGER
-###
-    http://127.0.0.1:8000/api/swagger/#
-###
+    python3 manage.py runserver --settings=backend.settings.local
