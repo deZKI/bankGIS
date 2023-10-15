@@ -5,13 +5,14 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY . /app
 
-RUN apk update && apk add build-base musl-dev
-RUN apk add libffi-dev
-RUN apk add openblas
+# Install required system libraries including OpenBLAS
+RUN apk update && apk add build-base libffi-dev python3-dev openblas-dev
 
-RUN apk update && apk add build-base libffi-dev python3-dev
-RUN apk add py3-cffi \
+# Install CFFI
+RUN apk add py3-cffi
 
-RUN pip install numpy -Csetup-args=-Dblas=blas -Csetup-args=-Dlapack=lapack
+# Install Python packages
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Collect static files (if necessary)
 RUN python manage.py collectstatic --noinput
